@@ -1,0 +1,19 @@
+name: Smart Missed Reminder
+
+on:
+  schedule:
+    - cron: "30 */2 * * *"   # 30 minutes after every reminder
+  workflow_dispatch:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Smart Missed Reminder
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+          -d chat_id="${CHAT_ID}" \
+          -d text=$'⚠️ Missed Water Reminder\nIf you haven’t drunk water yet, drink now 💧'
