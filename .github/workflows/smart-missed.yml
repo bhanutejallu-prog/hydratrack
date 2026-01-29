@@ -2,7 +2,8 @@ name: Smart Missed Reminder
 
 on:
   schedule:
-    - cron: "30 */2 * * *"   # 30 minutes after every reminder
+    - cron: "10 * * * *"
+   # 30 minutes after every reminder
   workflow_dispatch:
 
 jobs:
