@@ -1,6 +1,8 @@
 // ===== CONFIG =====
+const APP_VERSION = "v2"; // 🔴 CHANGE THIS IF YOU MODIFY LOGIC AGAIN
 const DAILY_GOAL = 3500;
 const STORAGE_KEY = "hydrationData";
+const VERSION_KEY = "hydrationVersion";
 const START_HOUR = 8;
 const END_HOUR = 21.5;
 const GRACE_MINUTES = 15;
@@ -30,6 +32,15 @@ function minutesToTime(mins) {
   const ampm = h >= 12 ? "PM" : "AM";
   return `${hh}:${m.toString().padStart(2, "0")} ${ampm}`;
 }
+
+// ===== STORAGE RESET (AUTO FIX) =====
+(function versionCheck() {
+  const savedVersion = localStorage.getItem(VERSION_KEY);
+  if (savedVersion !== APP_VERSION) {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.setItem(VERSION_KEY, APP_VERSION);
+  }
+})();
 
 // ===== STORAGE =====
 function loadData() {
@@ -69,14 +80,12 @@ function generateReminders() {
 
 // ===== UI UPDATE =====
 function updateUI(data) {
-  // intake + percent
   intakeEl.textContent = `${data.intake} ml`;
   const percent = Math.min((data.intake / DAILY_GOAL) * 100, 100);
   percentEl.textContent = `${Math.round(percent)}%`;
   circle.style.strokeDashoffset =
     CIRCUMFERENCE - (percent / 100) * CIRCUMFERENCE;
 
-  // schedule
   scheduleList.innerHTML = "";
   let next = null;
 
@@ -89,9 +98,7 @@ function updateUI(data) {
     `;
     scheduleList.appendChild(li);
 
-    if (!r.done && !r.missed && !next) {
-      next = r;
-    }
+    if (!r.done && !r.missed && !next) next = r;
   });
 
   nextReminderEl.textContent = next
@@ -109,7 +116,6 @@ buttons.forEach(btn => {
     const amt = Number(btn.dataset.amount);
     data.intake = Math.min(data.intake + amt, DAILY_GOAL);
 
-    // mark next reminder done
     const next = data.reminders.find(r => !r.done && !r.missed);
     if (next) next.done = true;
 
@@ -128,13 +134,12 @@ setInterval(() => {
       !r.done &&
       !r.missed &&
       currentMinutes > r.time + GRACE_MINUTES &&
-      currentMinutes - r.time < 180 // only last 3 hours
+      currentMinutes - r.time < 180 // only recent reminders
     ) {
       r.missed = true;
     }
   });
 
-  // new day reset
   if (data.date !== todayKey()) {
     data = {
       date: todayKey(),
