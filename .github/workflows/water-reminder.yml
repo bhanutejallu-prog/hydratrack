@@ -3,9 +3,21 @@ name: Water Reminder
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */2 * * *"   # every 2 hours
+    - cron: "0 */2 * * *"      # normal reminders
+    - cron: "30 21 * * *"      # night summary
+    - cron: "0 9 * * 1"        # weekly summary (Monday 9 AM)
   repository_dispatch:
-    types: [goal_completed]
+    types:
+      [
+        goal_completed,
+        progress_25,
+        progress_50,
+        progress_75,
+        missed_alert,
+        night_summary,
+        weekly_summary,
+        smart_reminder
+      ]
 
 jobs:
   send:
@@ -16,13 +28,37 @@ jobs:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
         run: |
-          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-            MESSAGE="🎉 You completed today’s water goal! Great job 💧"
-          else
-            MESSAGE="💧 Time to drink water!"
-          fi
+          EVENT="${{ github.event.action || github.event_name }}"
 
-          echo "Sending: $MESSAGE"
+          case "$EVENT" in
+            progress_25)
+              MESSAGE="💧 25% hydration done. Good start!"
+              ;;
+            progress_50)
+              MESSAGE="💧 50% done. Keep going!"
+              ;;
+            progress_75)
+              MESSAGE="💧 75% done. Almost there!"
+              ;;
+            goal_completed)
+              MESSAGE="🎉 Goal completed! Excellent hydration today 💪"
+              ;;
+            missed_alert)
+              MESSAGE="⚠️ You missed a reminder. Drink water now!"
+              ;;
+            smart_reminder)
+              MESSAGE="⏰ You missed earlier. Drink water now 💧"
+              ;;
+            night_summary)
+              MESSAGE="🌙 Day completed. Check your hydration stats."
+              ;;
+            weekly_summary)
+              MESSAGE="📊 Weekly hydration summary is ready. Great consistency matters!"
+              ;;
+            *)
+              MESSAGE="💧 Time to drink water!"
+              ;;
+          esac
 
           curl --fail --silent --show-error \
           "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
