@@ -3,7 +3,8 @@ name: Water Reminder
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */2 * * *"      # normal reminders
+    - cron: "0 * * * *"
+      # normal reminders
     - cron: "30 21 * * *"      # night summary
     - cron: "0 9 * * 1"        # weekly summary (Monday 9 AM)
   repository_dispatch:
