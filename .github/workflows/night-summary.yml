@@ -2,7 +2,7 @@ name: Night Summary
 
 on:
   schedule:
-    - cron: "30 21 * * *"   # 9:30 PM IST
+    - cron: "30 21 * * *"
   workflow_dispatch:
 
 jobs:
@@ -16,4 +16,4 @@ jobs:
         run: |
           curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
           -d chat_id="${CHAT_ID}" \
-          -d text="🌙 Night Summary\nDid you complete your water goal today?"
+          -d text=$'🌙 Night Summary\nDid you complete your water goal today?'
