@@ -3,7 +3,9 @@ name: Water Reminder
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */2 * * *"
+   - cron: "0 * * * *"
+   - cron: "30 * * * *"
+
 
 jobs:
   send:
