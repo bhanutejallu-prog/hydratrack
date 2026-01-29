@@ -1,0 +1,19 @@
+name: Night Summary
+
+on:
+  schedule:
+    - cron: "30 21 * * *"   # 9:30 PM IST
+  workflow_dispatch:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Night Summary
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+          -d chat_id="${CHAT_ID}" \
+          -d text="🌙 Night Summary\nDid you complete your water goal today?"
