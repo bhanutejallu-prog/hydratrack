@@ -1,9 +1,14 @@
 // ===== CONFIG =====
 const DAILY_GOAL = 3500;
 const STORAGE_KEY = "hydrationData";
+const HISTORY_KEY = "hydrationHistory";
 const START_HOUR = 8;
 const END_HOUR = 21.5;
 const GRACE_MINUTES = 15;
+
+// GitHub trigger
+const GH_TRIGGER_TOKEN = "PASTE_YOUR_GITHUB_TRIGGER_TOKEN_HERE";
+const GH_REPO = "bhanutejallu-prog/hydratrack";
 
 // ===== ELEMENTS =====
 const intakeEl = document.getElementById("intake");
@@ -12,40 +17,21 @@ const circle = document.getElementById("circleProgress");
 const buttons = document.querySelectorAll("button[data-amount]");
 const scheduleList = document.getElementById("scheduleList");
 const nextReminderEl = document.getElementById("nextReminder");
-const notifyBtn = document.getElementById("enableNotify");
-
-// ===== SERVICE WORKER =====
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js");
-}
-
-// ===== NOTIFICATION PERMISSION =====
-if ("Notification" in window) {
-  if (Notification.permission === "default") {
-    notifyBtn.style.display = "block";
-    notifyBtn.onclick = async () => {
-      const res = await Notification.requestPermission();
-      if (res === "granted") notifyBtn.style.display = "none";
-    };
-  }
-}
-
-// ===== CIRCLE =====
-const RADIUS = 70;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-circle.style.strokeDasharray = CIRCUMFERENCE;
 
 // ===== HELPERS =====
 function todayKey() {
   return new Date().toISOString().split("T")[0];
 }
 
-function minutesToTime(mins) {
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  const ampm = h >= 12 ? "PM" : "AM";
-  const hh = h % 12 || 12;
-  return `${hh}:${m.toString().padStart(2, "0")} ${ampm}`;
+function trigger(event) {
+  fetch(`https://api.github.com/repos/${GH_REPO}/dispatches`, {
+    method: "POST",
+    headers: {
+      "Accept": "application/vnd.github+json",
+      "Authorization": `Bearer ${GH_TRIGGER_TOKEN}`
+    },
+    body: JSON.stringify({ event_type: event })
+  });
 }
 
 // ===== STORAGE =====
@@ -55,7 +41,8 @@ function loadData() {
     return {
       date: todayKey(),
       intake: 0,
-      reminders: generateReminders()
+      reminders: generateReminders(),
+      sent: { p25:false, p50:false, p75:false, goal:false }
     };
   }
   return saved;
@@ -65,148 +52,105 @@ function saveData(data) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
-// ===== UI UPDATE =====
-function updateUI(data) {
-  intakeEl.textContent = `${data.intake} ml`;
-
-  const percent = Math.min((data.intake / DAILY_GOAL) * 100, 100);
-  percentEl.textContent = `${Math.round(percent)}%`;
-  circle.style.strokeDashoffset =
-    CIRCUMFERENCE - (percent / 100) * CIRCUMFERENCE;
-
-  scheduleList.innerHTML = "";
-  let next = null;
-
-  data.reminders.forEach(r => {
-    const li = document.createElement("li");
-
-    let status = "Upcoming";
-    if (r.done) status = "Done ✅";
-    else if (r.missed) status = "Missed ❌";
-
-    li.innerHTML = `
-      <span>${minutesToTime(r.time)}</span>
-      <span>${status}</span>
-    `;
-    scheduleList.appendChild(li);
-
-    if (!r.done && !r.missed && next === null) {
-      next = r;
-    }
-  });
-
-  nextReminderEl.textContent = next
-    ? minutesToTime(next.time)
-    : "All done for today 🎉";
+// ===== HISTORY =====
+function saveDailyHistory(date, intake) {
+  const history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || {};
+  history[date] = intake;
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
 }
 
-// ===== REMINDER GENERATION =====
+// ===== REMINDERS =====
 function generateReminders() {
-  const reminders = [];
-  const totalMinutes = (END_HOUR - START_HOUR) * 60;
+  const list = [];
+  const total = (END_HOUR - START_HOUR) * 60;
   const sessions = Math.ceil(DAILY_GOAL / 300);
-  const gap = Math.floor(totalMinutes / sessions);
-
+  const gap = Math.floor(total / sessions);
   let time = START_HOUR * 60;
 
   for (let i = 0; i < sessions; i++) {
-    reminders.push({
-      time,
-      amount: 300,
-      done: false,
-      missed: false,
-      notified: false
-    });
+    list.push({ time, done:false, missed:false });
     time += gap;
   }
-  return reminders;
+  return list;
 }
 
-// ===== CHECK & NOTIFY =====
-function checkReminders(data) {
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+// ===== UI =====
+function updateUI(data) {
+  intakeEl.textContent = `${data.intake} ml`;
+  const pct = Math.min((data.intake / DAILY_GOAL) * 100, 100);
+  percentEl.textContent = `${Math.round(pct)}%`;
+  circle.style.strokeDashoffset = 440 - (pct / 100) * 440;
 
+  scheduleList.innerHTML = "";
+  let next = null;
   data.reminders.forEach(r => {
-    // Notification trigger (safe window)
-    if (
-      !r.done &&
-      !r.notified &&
-      currentMinutes >= r.time &&
-      currentMinutes < r.time + 1 &&
-      Notification.permission === "granted"
-    ) {
-      navigator.serviceWorker.ready.then(reg => {
-        reg.showNotification("HydraTrack 💧", {
-          body: `Time to drink ${r.amount} ml water`,
-          icon: "icon.png"
-        });
-      });
-      r.notified = true;
-    }
-
-    // Mark missed
-    if (
-      !r.done &&
-      !r.missed &&
-      currentMinutes > r.time + GRACE_MINUTES
-    ) {
-      r.missed = true;
-    }
+    const li = document.createElement("li");
+    li.innerHTML = `<span>${r.time}</span><span>${r.done ? "Done" : r.missed ? "Missed" : "Upcoming"}</span>`;
+    scheduleList.appendChild(li);
+    if (!r.done && !r.missed && !next) next = r;
   });
-
-  saveData(data);
-  updateUI(data);
-}
-function saveDailyHistory(date, intake) {
-  const history =
-    JSON.parse(localStorage.getItem("hydrationHistory")) || {};
-  history[date] = intake;
-  localStorage.setItem("hydrationHistory", JSON.stringify(history));
+  nextReminderEl.textContent = next ? "Upcoming" : "Done 🎉";
 }
 
 // ===== MAIN =====
 let data = loadData();
-
-// SAFETY CHECK
-if (!data.reminders || data.reminders.length === 0) {
-  data.reminders = generateReminders();
-  saveData(data);
-}
-
-// IMPORTANT: run immediately
-checkReminders(data);
 updateUI(data);
 
-// Button actions
+// Buttons
 buttons.forEach(btn => {
-  btn.addEventListener("click", () => {
+  btn.onclick = () => {
     const amt = Number(btn.dataset.amount);
     data.intake = Math.min(data.intake + amt, DAILY_GOAL);
 
     const next = data.reminders.find(r => !r.done && !r.missed);
     if (next) next.done = true;
 
+    const pct = (data.intake / DAILY_GOAL) * 100;
+
+    if (pct >= 25 && !data.sent.p25) { trigger("progress_25"); data.sent.p25 = true; }
+    if (pct >= 50 && !data.sent.p50) { trigger("progress_50"); data.sent.p50 = true; }
+    if (pct >= 75 && !data.sent.p75) { trigger("progress_75"); data.sent.p75 = true; }
+    if (pct >= 100 && !data.sent.goal) { trigger("goal_completed"); data.sent.goal = true; }
+
     saveData(data);
     updateUI(data);
-  });
+  };
 });
 
-// Every minute check
+// ===== SMART REMINDERS =====
 setInterval(() => {
- if (data.date !== todayKey()) {
-  saveDailyHistory(data.date, data.intake); // 👈 ADD THIS
+  const now = new Date();
+  const mins = now.getHours() * 60 + now.getMinutes();
 
-  data = {
-    date: todayKey(),
-    intake: 0,
-    reminders: generateReminders()
-  };
+  data.reminders.forEach(r => {
+    if (!r.done && !r.missed && mins > r.time + GRACE_MINUTES) {
+      r.missed = true;
+      trigger("missed_alert");
+
+      // Smart follow-up reminder after 10 min
+      setTimeout(() => trigger("smart_reminder"), 10 * 60 * 1000);
+    }
+  });
 
   saveData(data);
   updateUI(data);
-  return;
-}
+}, 60000);
 
-  checkReminders(data);
-}, 60 * 1000);
+// ===== DAILY & WEEKLY SUMMARY =====
+setInterval(() => {
+  if (data.date !== todayKey()) {
+    saveDailyHistory(data.date, data.intake);
+
+    const history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || {};
+    const days = Object.keys(history).slice(-7);
+
+    if (days.length === 7) {
+      trigger("weekly_summary");
+    }
+
+    trigger("night_summary");
+    data = loadData();
+    saveData(data);
+    updateUI(data);
+  }
+}, 60000);
