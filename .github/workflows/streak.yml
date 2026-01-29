@@ -1,0 +1,48 @@
+name: Streak Motivation
+
+on:
+  schedule:
+    - cron: "0 22 * * *"   # 10:00 PM IST
+  workflow_dispatch:
+
+jobs:
+  streak:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore streak count
+        uses: actions/cache@v3
+        with:
+          path: streak.txt
+          key: hydration-streak
+
+      - name: Initialize streak file
+        run: |
+          if [ ! -f streak.txt ]; then
+            echo 0 > streak.txt
+          fi
+
+      - name: Update streak
+        run: |
+          STREAK=$(cat streak.txt)
+          STREAK=$((STREAK + 1))
+          echo $STREAK > streak.txt
+          echo "STREAK=$STREAK" >> $GITHUB_ENV
+
+      - name: Send streak message
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+        run: |
+          if [ "$STREAK" -eq 1 ]; then
+            MSG="🏁 Day 1!\nYou started your hydration journey 💧"
+          elif [ "$STREAK" -eq 3 ]; then
+            MSG="🔥 3-Day Streak!\nConsistency is building 💪"
+          elif [ "$STREAK" -eq 7 ]; then
+            MSG="🏆 7-Day Streak!\nYou’re officially disciplined 👑"
+          else
+            MSG="💧 Day $STREAK Streak\nKeep going strong!"
+          fi
+
+          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+          -d chat_id="${CHAT_ID}" \
+          -d text="$MSG"
