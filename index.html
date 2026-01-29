@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HydraTrack</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>HydraTrack</h1>
+    <p>Daily Hydration Dashboard</p>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="card profile">
+    <div>
+      <p>Weight</p>
+      <h3>90 kg</h3>
+    </div>
+    <div>
+      <p>Daily Goal</p>
+      <h3>3500 ml</h3>
+    </div>
+  </div>
+
+  <!-- MAIN PROGRESS -->
+  <div class="card progress-card">
+    <div class="circle">
+      <svg width="160" height="160">
+        <circle cx="80" cy="80" r="70" class="bg"></circle>
+        <circle cx="80" cy="80" r="70" class="progress" id="circleProgress"></circle>
+      </svg>
+      <div class="circle-text">
+        <h2 id="percentage">0%</h2>
+        <span>hydrated</span>
+      </div>
+    </div>
+
+    <p class="intake-text">
+      <span id="intake">0 ml</span> / 3500 ml
+    </p>
+  </div>
+
+  <!-- QUICK ACTIONS -->
+  <div class="actions">
+    <button data-amount="250">+250 ml</button>
+    <button data-amount="300" class="primary">+300 ml</button>
+    <button data-amount="500">+500 ml</button>
+  </div>
+
+  <!-- NEXT REMINDER -->
+  <div class="card reminder">
+    <p>Next Reminder</p>
+    <h3 id="nextReminder">Calculating...</h3>
+  </div>
+
+  <!-- TODAY SCHEDULE -->
+  <div class="card schedule">
+    <p>Today’s Schedule</p>
+    <ul id="scheduleList"></ul>
+  </div>
+
+  <!-- WEEKLY SUMMARY -->
+  <div class="card weekly">
+    <p>Weekly Progress</p>
+    <h3>Coming Soon</h3>
+    <span>Avg, streaks, graphs</span>
+  </div>
+
+</div>
+<button id="enableNotify" style="display:none;">Enable Notifications</button>
+
+
+<script src="app.js"></script>
+
+
+
+</body>
+</html>

@@ -1,0 +1,144 @@
+* {
+  box-sizing: border-box;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.app {
+  width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.header {
+  text-align: center;
+  color: white;
+}
+
+.header h1 {
+  margin: 0;
+}
+
+.header p {
+  margin-top: 4px;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.card {
+  background: white;
+  border-radius: 20px;
+  padding: 16px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+}
+
+.profile {
+  display: flex;
+  justify-content: space-between;
+}
+
+.profile p {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.profile h3 {
+  margin: 4px 0 0;
+}
+
+.progress-card {
+  text-align: center;
+}
+
+.circle {
+  position: relative;
+  width: 160px;
+  margin: auto;
+}
+
+svg {
+  transform: rotate(-90deg);
+}
+
+circle {
+  fill: none;
+  stroke-width: 12;
+}
+
+circle.bg {
+  stroke: #e0ecff;
+}
+
+circle.progress {
+  stroke: #4facfe;
+  stroke-dasharray: 440;
+  stroke-dashoffset: 440;
+  transition: stroke-dashoffset 0.4s ease;
+}
+
+.circle-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.intake-text {
+  margin-top: 8px;
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 14px;
+  background: #e3f2ff;
+  color: #0077cc;
+  cursor: pointer;
+}
+
+button.primary {
+  background: #4facfe;
+  color: white;
+}
+
+.reminder h3 {
+  margin: 6px 0 0;
+  color: #0077cc;
+}
+
+.schedule ul {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+}
+
+.schedule li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  padding: 6px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.weekly span {
+  font-size: 12px;
+  color: #777;
+}
